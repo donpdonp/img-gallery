@@ -16,13 +16,16 @@ fn main() -> Result<()> {
     // Add a path to be watched. All files and directories at that path and
     // below will be monitored for changes.
     watcher.watch(Path::new(IMG_PATH), RecursiveMode::Recursive)?;
+
     // Block forever, printing out events as they come in
     for res in rx {
         match res {
-            Ok(event) => println!("event: {:?}", event),
+            Ok(event) => sync(event.paths[0].clone()),
             Err(e) => println!("watch error: {:?}", e),
         }
     }
 
     Ok(())
 }
+
+fn sync(paths: std::path::PathBuf) {}

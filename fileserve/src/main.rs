@@ -1,9 +1,6 @@
-mod db;
-mod http;
-
 use tiny_http::{Response, Server};
 
-use http::handle_request;
+use fileserve::{db, http::handle_request, models::Image};
 
 #[derive(serde::Deserialize)]
 struct Req {
@@ -12,11 +9,6 @@ struct Req {
 
 struct ReqResp {
     images: Vec<Image>,
-}
-
-#[derive(serde::Serialize)]
-struct Image {
-    filename: String,
 }
 
 fn main() -> Result<(), std::io::Error> {
