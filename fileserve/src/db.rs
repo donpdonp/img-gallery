@@ -25,3 +25,15 @@ pub fn images_since(db: &mut Connection, start_timestamp: u64) -> Vec<Image> {
     }
     images
 }
+
+pub(crate) fn exists(c: &mut Connection, path: &str) -> bool {
+    return false;
+}
+
+pub(crate) fn insert(c: &mut Connection, path: &str) {
+    let mut stmt = c
+        .prepare("INSERT INTO images (filename) VALUES (?)")
+        .unwrap();
+    stmt.bind((1, path)).unwrap();
+    stmt.next().unwrap();
+}

@@ -28,4 +28,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn sync(paths: std::path::PathBuf) {}
+fn sync(path: std::path::PathBuf) {
+    let filename = path.as_path().file_name().unwrap();
+    fileserve::sync(filename.to_str().unwrap());
+}
