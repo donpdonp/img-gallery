@@ -20,7 +20,12 @@ fn main() -> Result<()> {
     // Block forever, printing out events as they come in
     for res in rx {
         match res {
-            Ok(event) => sync(event.paths[0].clone()),
+            Ok(event) => match event.kind {
+                notify::EventKind::Create(notify::event::CreateKind::File) => {
+                    sync(event.paths[0].clone())
+                }
+                _ => (),
+            },
             Err(e) => println!("watch error: {:?}", e),
         }
     }
