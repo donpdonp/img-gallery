@@ -2,10 +2,15 @@ use notify::{Event, RecursiveMode, Result, Watcher};
 use std::path::Path;
 use std::sync::mpsc;
 
-const IMG_PATH: &str = "img";
+const CONFIG_FILE: &str = "config.yaml";
 
 fn main() -> Result<()> {
     let (tx, rx) = mpsc::channel::<Result<Event>>();
+    println!("config {}", CONFIG_FILE);
+    shared::CONFIG
+        .set(shared::config::load(CONFIG_FILE))
+        .unwrap();
+    let config = shared::CONFIG.get().unwrap();
 
     // Use recommended_watcher() to automatically select the best implementation
     // for your platform. The `EventHandler` passed to this constructor can be a
@@ -15,7 +20,8 @@ fn main() -> Result<()> {
 
     // Add a path to be watched. All files and directories at that path and
     // below will be monitored for changes.
-    watcher.watch(Path::new(IMG_PATH), RecursiveMode::Recursive)?;
+    println!("photos_path {}", &config.photos_path);
+    watcher.watch(Path::new(&config.photos_path), RecursiveMode::Recursive)?;
 
     // Block forever, printing out events as they come in
     for res in rx {
