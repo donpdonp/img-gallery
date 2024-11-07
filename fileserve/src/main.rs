@@ -12,7 +12,14 @@ struct ReqResp {
 }
 
 fn main() -> Result<(), std::io::Error> {
-    let server = Server::http("0.0.0.0:8000").unwrap();
+    println!("config {}", shared::CONFIG_FILE);
+    shared::CONFIG
+        .set(shared::config::load(shared::CONFIG_FILE))
+        .unwrap();
+    let config = shared::CONFIG.get().unwrap();
+
+    println!("listening {}", &config.listen_address);
+    let server = Server::http(&config.listen_address).unwrap();
     let mut db = db::init();
 
     // accept connections and process them serially

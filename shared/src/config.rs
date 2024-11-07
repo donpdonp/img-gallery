@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub photos_path: String,
+    pub listen_address: String,
 }
 
 pub fn load(filename: &str) -> Config {

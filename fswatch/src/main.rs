@@ -2,13 +2,11 @@ use notify::{Event, RecursiveMode, Result, Watcher};
 use std::path::Path;
 use std::sync::mpsc;
 
-const CONFIG_FILE: &str = "config.yaml";
-
 fn main() -> Result<()> {
     let (tx, rx) = mpsc::channel::<Result<Event>>();
-    println!("config {}", CONFIG_FILE);
+    println!("config {}", shared::CONFIG_FILE);
     shared::CONFIG
-        .set(shared::config::load(CONFIG_FILE))
+        .set(shared::config::load(shared::CONFIG_FILE))
         .unwrap();
     let config = shared::CONFIG.get().unwrap();
 
