@@ -5,3 +5,6 @@ all:
 
 web:
 	cd svelte ; npm run build
+
+webdev:
+	cd svelte ; python svelte-simple-server.py
