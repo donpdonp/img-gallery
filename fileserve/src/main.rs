@@ -1,4 +1,4 @@
-use tiny_http::{Response, Server};
+use tiny_http::{Header, Response, Server};
 
 use fileserve::{db, http::handle_request, models::Image};
 
@@ -24,6 +24,13 @@ fn main() -> Result<(), std::io::Error> {
 
     // accept connections and process them serially
     for mut request in server.incoming_requests() {
+        println!(
+            "method: {:?}, url: {:?}, headers: {:?}",
+            request.method(),
+            request.url(),
+            request.headers()
+        );
+
         let json_opt = handle_request(&mut request, &mut db);
         let mut body = String::new();
         if let Some(json) = json_opt {
@@ -32,7 +39,9 @@ fn main() -> Result<(), std::io::Error> {
             body.push_str(&serde_json::to_string(&images).unwrap())
         } else {
         }
-        request.respond(Response::from_string(body));
+        let cors = Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap();
+        let resp = Response::from_string(body).with_header(cors);
+        request.respond(resp).unwrap();
     }
     Ok(())
 }
