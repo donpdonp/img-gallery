@@ -1,6 +1,6 @@
 use tiny_http::{Header, Response, Server};
 
-use fileserve::{db, http::handle_request, models::Image};
+use fileserve::{db, http::parse_request, models::Image};
 
 #[derive(serde::Deserialize)]
 struct Req {
@@ -24,16 +24,12 @@ fn main() -> Result<(), std::io::Error> {
 
     // accept connections and process them serially
     for mut request in server.incoming_requests() {
-        println!(
-            "method: {:?}, url: {:?}, headers: {:?}",
-            request.method(),
-            request.url(),
-            request.headers()
-        );
+        println!("method: {:?}, url: {:?}", request.method(), request.url(),);
 
-        let json_opt = handle_request(&mut request, &mut db);
+        let json_opt = parse_request(&mut request, &mut db);
         let mut body = String::new();
         if let Some(json) = json_opt {
+            println!("body: {}", json);
             let req: Req = serde_json::from_str(&json).unwrap();
             let images = db::images_since(&mut db, req.start_timestamp);
             body.push_str(&serde_json::to_string(&images).unwrap())
