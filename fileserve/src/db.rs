@@ -7,6 +7,7 @@ pub fn init() -> Connection {
     connection
         .execute(
             "CREATE TABLE IF NOT EXISTS images (
+              hash INTEGER PRIMARY KEY,
               filename VARCHAR(255)
             )",
         )
@@ -20,20 +21,22 @@ pub fn images_since(db: &mut Connection, start_timestamp: u64) -> Vec<Image> {
     while let Ok(State::Row) = statement.next() {
         let img: Image = Image {
             filename: statement.read::<String, _>("filename").unwrap(),
+            hash: statement.read::<i64, _>("hash").unwrap() as u64,
         };
         images.push(img)
     }
     images
 }
 
-pub(crate) fn exists(c: &mut Connection, path: &str) -> bool {
+pub fn exists(c: &mut Connection, path: &str) -> bool {
     return false;
 }
 
-pub(crate) fn insert(c: &mut Connection, path: &str) {
+pub fn image_insert(c: &mut Connection, image: &Image) {
     let mut stmt = c
-        .prepare("INSERT INTO images (filename) VALUES (?)")
+        .prepare("INSERT INTO images (hash, filename) VALUES (?, ?)")
         .unwrap();
-    stmt.bind((1, path)).unwrap();
-    stmt.next().unwrap();
+    stmt.bind((1, image.hash as i64)).unwrap();
+    stmt.bind((2, image.filename.as_str())).unwrap();
+    while stmt.next().unwrap() != State::Done {}
 }

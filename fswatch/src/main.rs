@@ -1,3 +1,6 @@
+use fileserve::db;
+use fileserve::models::Image;
+use highway::HighwayHash;
 use notify::{Event, RecursiveMode, Result, Watcher};
 use std::path::Path;
 use std::sync::mpsc;
@@ -10,18 +13,10 @@ fn main() -> Result<()> {
         .unwrap();
     let config = shared::CONFIG.get().unwrap();
 
-    // Use recommended_watcher() to automatically select the best implementation
-    // for your platform. The `EventHandler` passed to this constructor can be a
-    // closure, a `std::sync::mpsc::Sender`, a `crossbeam_channel::Sender`, or
-    // another type the trait is implemented for.
     let mut watcher = notify::recommended_watcher(tx)?;
-
-    // Add a path to be watched. All files and directories at that path and
-    // below will be monitored for changes.
     println!("photos_path {}", &config.photos_path);
     watcher.watch(Path::new(&config.photos_path), RecursiveMode::Recursive)?;
 
-    // Block forever, printing out events as they come in
     for res in rx {
         match res {
             Ok(event) => match event.kind {
@@ -38,6 +33,18 @@ fn main() -> Result<()> {
 }
 
 fn sync(path: std::path::PathBuf) {
-    let filename = path.as_path().file_name().unwrap();
-    fileserve::sync(filename.to_str().unwrap());
+    let hasher = highway::HighwayHasher::default();
+    let hash = hasher.hash64(&std::fs::read(&path).unwrap());
+    let mut db = db::init();
+    if !fileserve::db::exists(&mut db, &hash.to_string()) {
+        println!("{:?} processing {}", path, hash);
+        let filename = String::from_utf8(Vec::from(
+            path.as_path().file_name().unwrap().as_encoded_bytes(),
+        ))
+        .unwrap();
+        let image = Image { filename, hash };
+        fileserve::db::image_insert(&mut db, &image);
+    } else {
+        println!("{:?} exists", path);
+    }
 }
