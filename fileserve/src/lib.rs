@@ -1,6 +1,7 @@
 pub mod db;
 pub mod http;
 pub mod models;
+pub mod router;
 
 pub fn sync(path: &str) {
     let mut c = db::init();

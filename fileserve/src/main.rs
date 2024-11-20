@@ -1,15 +1,6 @@
-use tiny_http::{Header, Response, Server};
+use tiny_http::{Header, Server};
 
-use fileserve::{db, http::parse_request, models::Image};
-
-#[derive(serde::Deserialize)]
-struct Req {
-    start_timestamp: u64,
-}
-
-struct ReqResp {
-    images: Vec<Image>,
-}
+use fileserve::{db, router::route_request};
 
 fn main() -> Result<(), std::io::Error> {
     println!("config {}", shared::CONFIG_FILE);
@@ -26,18 +17,9 @@ fn main() -> Result<(), std::io::Error> {
     for mut request in server.incoming_requests() {
         println!("method: {:?}, url: {:?}", request.method(), request.url(),);
 
-        let json_opt = parse_request(&mut request, &mut db);
-        let mut body = String::new();
-        if let Some(json) = json_opt {
-            println!("body: {}", json);
-            let req: Req = serde_json::from_str(&json).unwrap();
-            let images = db::images_since(&mut db, req.start_timestamp);
-            body.push_str(&serde_json::to_string(&images).unwrap())
-        } else {
-        }
+        let resp = route_request(&mut db, &mut request);
         let cors = Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap();
-        let resp = Response::from_string(body).with_header(cors);
-        request.respond(resp).unwrap();
+        request.respond(resp.with_header(cors)).unwrap();
     }
     Ok(())
 }
