@@ -23,6 +23,8 @@ pub fn route_request(db: &mut Connection, request: &mut Request) -> Response<Cur
         let images = db::images_since(db, req.start_timestamp);
         body.push_str(&serde_json::to_string(&images).unwrap())
     } else {
+        let hash = request.url();
+        println!("read {}", hash);
     }
     Response::from_string(body)
 }

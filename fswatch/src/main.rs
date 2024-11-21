@@ -1,6 +1,6 @@
 use fileserve::db;
 use fileserve::models::Image;
-use highway::HighwayHash;
+use highway::{HighwayHash, PortableHash};
 use notify::{Event, RecursiveMode, Result, Watcher};
 use std::path::Path;
 use std::sync::mpsc;
@@ -20,9 +20,9 @@ fn main() -> Result<()> {
     for res in rx {
         match res {
             Ok(event) => match event.kind {
-                notify::EventKind::Create(notify::event::CreateKind::File) => {
-                    sync(event.paths[0].clone())
-                }
+                notify::EventKind::Access(notify::event::AccessKind::Close(
+                    notify::event::AccessMode::Write,
+                )) => sync(event.paths[0].clone()),
                 _ => (),
             },
             Err(e) => println!("watch error: {:?}", e),
@@ -33,18 +33,21 @@ fn main() -> Result<()> {
 }
 
 fn sync(path: std::path::PathBuf) {
-    let hasher = highway::HighwayHasher::default();
-    let hash = hasher.hash64(&std::fs::read(&path).unwrap());
+    let mut file = std::fs::File::open(&path).unwrap();
+    let mut hasher = PortableHash::default();
+    let bytes_copied = std::io::copy(&mut file, &mut hasher).unwrap();
+    let hash = hasher.finalize64();
+    println!("{:?} processing {} bytes {} hash", path, bytes_copied, hash);
     let mut db = db::init();
-    if !fileserve::db::exists(&mut db, &hash.to_string()) {
-        println!("{:?} processing {}", path, hash);
+    if fileserve::db::exists(&mut db, hash) {
+        println!("{:?} hash exists {}", path, hash);
+    } else {
+        println!("{:?} inserting {} hash", path, hash);
         let filename = String::from_utf8(Vec::from(
             path.as_path().file_name().unwrap().as_encoded_bytes(),
         ))
         .unwrap();
         let image = Image { filename, hash };
         fileserve::db::image_insert(&mut db, &image);
-    } else {
-        println!("{:?} exists", path);
     }
 }
