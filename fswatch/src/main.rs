@@ -37,10 +37,12 @@ fn sync(path: std::path::PathBuf) {
     let mut hasher = PortableHash::default();
     let bytes_copied = std::io::copy(&mut file, &mut hasher).unwrap();
     let hash = hasher.finalize64();
-    println!("{:?} processing {} bytes {} hash", path, bytes_copied, hash);
     let mut db = db::init();
     if fileserve::db::exists(&mut db, hash) {
-        println!("{:?} hash exists {}", path, hash);
+        println!(
+            "{:?} (len {}) dupe! hash exists {}",
+            path, bytes_copied, hash
+        );
     } else {
         println!("{:?} inserting {} hash", path, hash);
         let filename = String::from_utf8(Vec::from(

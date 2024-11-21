@@ -3,7 +3,9 @@ use sqlite::{Connection, State};
 use crate::models::Image;
 
 pub fn init() -> Connection {
-    let connection = sqlite::open("images.sqlite").unwrap();
+    let filepath = std::fs::canonicalize("images.sqlite").unwrap();
+    println!("sqlite3 {}", filepath.as_os_str().to_str().unwrap());
+    let connection = sqlite::open(filepath).unwrap();
     connection
         .execute(
             "CREATE TABLE IF NOT EXISTS images (
@@ -19,7 +21,6 @@ pub fn images_since(db: &mut Connection, start_timestamp: u64) -> Vec<Image> {
     let mut images: Vec<Image> = Vec::new();
     let mut statement = db.prepare("select * from images").unwrap();
     while let Ok(State::Row) = statement.next() {
-        println!("statement {:?}", statement.column_names());
         let img: Image = Image {
             hash: statement.read::<i64, _>("hash").unwrap() as u64,
             filename: statement.read::<String, _>("filename").unwrap(),
