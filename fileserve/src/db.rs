@@ -21,22 +21,19 @@ pub fn images_since(db: &mut Connection, start_timestamp: u64) -> Vec<Image> {
     let mut images: Vec<Image> = Vec::new();
     let mut statement = db.prepare("select * from images").unwrap();
     while let Ok(State::Row) = statement.next() {
-        let img: Image = Image {
-            hash: statement.read::<i64, _>("hash").unwrap() as u64,
-            filename: statement.read::<String, _>("filename").unwrap(),
-        };
+        let img: Image = Image::from_statement(&statement);
         images.push(img)
     }
     images
 }
 
-pub fn exists(c: &mut Connection, hash: u64) -> bool {
+pub fn image_exists(c: &mut Connection, hash: u64) -> Option<Image> {
     let mut stmt = c.prepare("SELECT hash FROM images WHERE hash = ?").unwrap();
     stmt.bind((1, hash as i64)).unwrap();
     if let Ok(State::Row) = stmt.next() {
-        return true;
+        Some(Image::from_statement(&stmt))
     } else {
-        return false;
+        None
     }
 }
 
