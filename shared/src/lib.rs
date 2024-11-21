@@ -2,6 +2,7 @@ use std::sync::OnceLock;
 
 pub mod config;
 pub mod hash;
+pub mod image;
 
 pub const CONFIG_FILE: &str = "config.yaml";
 pub static CONFIG: OnceLock<config::Config> = OnceLock::new();

@@ -23,18 +23,26 @@ pub fn route_request(mut db: &mut Connection, request: &mut Request) -> Response
         let req: Req = serde_json::from_str(&json).unwrap();
         let images = db::images_since(db, req.start_timestamp);
         let req_resp = ImageListResp { images };
-        body.push_str(&serde_json::to_string(&req_resp).unwrap())
+        body.push_str(&serde_json::to_string(&req_resp).unwrap());
+        Response::from_string(body)
     } else {
         let hash_code = request.url();
         let hash = shared::hash::hash_to_u64(&hash_code[1..]);
-        match db::image_exists(db, hash) {
-            Some(image) => thumbnail(&mut db, image.filename),
+        let config = shared::CONFIG.get().unwrap();
+        let img_bytes = match db::image_exists(db, hash) {
+            Some(image) => {
+                let filename = config.photos_path.clone() + "/" + &image.filename;
+                println!("thumbnail {:?}", filename);
+                thumbnail(&mut db, filename)
+            }
             None => vec![],
         };
+        Response::from_data(img_bytes)
     }
-    Response::from_string(body)
 }
 
 fn thumbnail(db: &mut Connection, filename: String) -> Vec<u8> {
+    let dimentions = shared::image::image_size(filename);
+    println!("thumbnail {:?}", dimentions);
     vec![]
 }

@@ -28,7 +28,7 @@ pub fn images_since(db: &mut Connection, start_timestamp: u64) -> Vec<Image> {
 }
 
 pub fn image_exists(c: &mut Connection, hash: u64) -> Option<Image> {
-    let mut stmt = c.prepare("SELECT hash FROM images WHERE hash = ?").unwrap();
+    let mut stmt = c.prepare("SELECT * FROM images WHERE hash = ?").unwrap();
     stmt.bind((1, hash as i64)).unwrap();
     if let Ok(State::Row) = stmt.next() {
         Some(Image::from_statement(&stmt))

@@ -7,3 +7,4 @@ edition = "2021"
 figment = { version = "0.10.19", features = ["yaml"] }
 serde = "1.0.214"
 data-encoding = "2.6.0"
+image = "0.25.5"
