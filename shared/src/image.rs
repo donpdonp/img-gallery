@@ -1,6 +1,12 @@
+use std::io::Cursor;
+
 use image::{GenericImageView, ImageError, ImageReader};
 
-pub fn image_size(filename: String) -> Result<(u32, u32), ImageError> {
+pub fn image_thumb(filename: String) -> Result<Vec<u8>, ImageError> {
     let img = ImageReader::open(filename)?.decode()?;
-    Ok(img.dimensions())
+    let dim = img.dimensions();
+    let thumbnail = img.resize(dim.0, dim.1, image::imageops::FilterType::Triangle);
+    let mut bytes: Vec<u8> = Vec::new();
+    thumbnail.write_to(&mut Cursor::new(&mut bytes), image::ImageFormat::Jpeg)?;
+    Ok(bytes)
 }

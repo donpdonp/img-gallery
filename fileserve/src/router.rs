@@ -1,4 +1,4 @@
-use std::io::{Cursor, Error};
+use std::io::Cursor;
 
 use sqlite::Connection;
 use tiny_http::{Request, Response};
@@ -32,17 +32,16 @@ pub fn route_request(mut db: &mut Connection, request: &mut Request) -> Response
         let img_bytes = match db::image_exists(db, hash) {
             Some(image) => {
                 let filename = config.photos_path.clone() + "/" + &image.filename;
-                println!("thumbnail {:?}", filename);
+                println!("thumbnail processing {:?}", filename);
                 thumbnail(&mut db, filename)
             }
             None => vec![],
         };
+        println!("thumb bytes {}", img_bytes.len());
         Response::from_data(img_bytes)
     }
 }
 
-fn thumbnail(db: &mut Connection, filename: String) -> Vec<u8> {
-    let dimentions = shared::image::image_size(filename);
-    println!("thumbnail {:?}", dimentions);
-    vec![]
+fn thumbnail(_db: &mut Connection, filename: String) -> Vec<u8> {
+    shared::image::image_thumb(filename).unwrap()
 }
