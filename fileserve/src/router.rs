@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
 use sqlite::Connection;
-use tiny_http::{Request, Response};
+use tiny_http::{Header, Request, Response};
 
 use crate::{db, http::parse_request, models::Image};
 
@@ -24,7 +24,8 @@ pub fn route_request(mut db: &mut Connection, request: &mut Request) -> Response
         let images = db::images_since(db, req.start_timestamp);
         let req_resp = ImageListResp { images };
         body.push_str(&serde_json::to_string(&req_resp).unwrap());
-        Response::from_string(body)
+        let content_type = Header::from_bytes("Content-Type", "application/json").unwrap();
+        Response::from_string(body).with_header(content_type)
     } else {
         let hash_code = request.url();
         let hash = shared::hash::hash_to_u64(&hash_code[1..]);
@@ -37,8 +38,8 @@ pub fn route_request(mut db: &mut Connection, request: &mut Request) -> Response
             }
             None => vec![],
         };
-        println!("thumb bytes {}", img_bytes.len());
-        Response::from_data(img_bytes)
+        let content_type = Header::from_bytes("Content-Type", "image/jpeg").unwrap();
+        Response::from_data(img_bytes).with_header(content_type)
     }
 }
 

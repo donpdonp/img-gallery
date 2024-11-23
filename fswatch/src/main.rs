@@ -38,7 +38,7 @@ fn sync(path: std::path::PathBuf) {
     let bytes_copied = std::io::copy(&mut file, &mut hasher).unwrap();
     let hash = hasher.finalize64();
     let mut db = db::init();
-    if let Some(image) = fileserve::db::image_exists(&mut db, hash) {
+    if let Some(_image) = fileserve::db::image_exists(&mut db, hash) {
         println!(
             "{:?} (len {}) dupe! hash exists {}",
             path, bytes_copied, hash

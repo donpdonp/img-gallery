@@ -19,11 +19,8 @@ fn main() -> Result<(), std::io::Error> {
 
         let resp = route_request(&mut db, &mut request);
         let cors = Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap();
-        let ct = Header::from_bytes("Content-Type", "image/jpeg").unwrap();
         println!("response bytes {}", resp.data_length().unwrap());
-        request
-            .respond(resp.with_header(cors).with_header(ct))
-            .unwrap();
+        request.respond(resp.with_header(cors)).unwrap();
     }
     Ok(())
 }
