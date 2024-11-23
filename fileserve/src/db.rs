@@ -17,7 +17,7 @@ pub fn init() -> Connection {
     connection
 }
 
-pub fn images_since(db: &mut Connection, start_timestamp: u64) -> Vec<Image> {
+pub fn images_since(db: &mut Connection, _start_timestamp: u64) -> Vec<Image> {
     let mut images: Vec<Image> = Vec::new();
     let mut statement = db.prepare("select * from images").unwrap();
     while let Ok(State::Row) = statement.next() {
