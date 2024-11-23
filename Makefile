@@ -7,4 +7,4 @@ web:
 	cd svelte ; npm run build
 
 webdev:
-	cd svelte ; python svelte-simple-server.py
+	cd svelte ; python serve-build.py

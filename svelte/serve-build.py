@@ -7,7 +7,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.path = "/build" + self.path.split('?')[0] 
         path = pathlib.Path(self.path)
         if path.suffix == '': 
-            self.path = '/build/200.html'
+            self.path = '/build/index.html'
             path = pathlib.Path(self.path)
         try:
             mime = extToMime(path.suffix)
