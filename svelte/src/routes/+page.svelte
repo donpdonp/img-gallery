@@ -34,13 +34,13 @@
         src="{PUBLIC_IMG_STORE_URL}/{image.hash}?h=200"
         alt={image.filename}
       />
-      {image.hash}
     </div>
   {/each}
 </div>
 
 <style>
   .image {
+    margin: 3px;
   }
 
   #images {
