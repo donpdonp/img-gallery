@@ -30,7 +30,10 @@
 <div id="images">
   {#each images as image}
     <div class="image">
-      <img src="{PUBLIC_IMG_STORE_URL}/{image.hash}" alt={image.filename} />
+      <img
+        src="{PUBLIC_IMG_STORE_URL}/{image.hash}?h=200"
+        alt={image.filename}
+      />
       {image.hash}
     </div>
   {/each}

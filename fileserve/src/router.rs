@@ -3,6 +3,7 @@ use std::io::Cursor;
 use shared::image::image_thumb;
 use sqlite::Connection;
 use tiny_http::{Header, Request, Response};
+use url::Url;
 
 use crate::{db, http::parse_request, models::Image};
 
@@ -28,14 +29,24 @@ pub fn route_request(mut db: &mut Connection, request: &mut Request) -> Response
         let content_type = Header::from_bytes("Content-Type", "application/json").unwrap();
         Response::from_string(body).with_header(content_type)
     } else {
-        let hash_code = request.url();
+        let url = Url::parse(&("http://localhost".to_owned() + request.url())).unwrap();
+        let hash_code = url.path();
+        let w_height_str = if let Some(qp) = url.query_pairs().find(|qp| qp.0 == "h") {
+            qp.1.into_owned()
+        } else {
+            "300".to_owned()
+        };
         let hash = shared::hash::hash_to_u64(&hash_code[1..]);
         let config = shared::CONFIG.get().unwrap();
         let img_bytes = match db::image_exists(db, hash) {
             Some(image) => {
                 let filename = config.photos_path.clone() + "/" + &image.filename;
                 println!("thumbnail processing {:?}", filename);
-                thumbnail(&mut db, filename)
+                thumbnail(
+                    &mut db,
+                    filename,
+                    u32::from_str_radix(&w_height_str, 10).unwrap(),
+                )
             }
             None => vec![],
         };
@@ -44,7 +55,7 @@ pub fn route_request(mut db: &mut Connection, request: &mut Request) -> Response
     }
 }
 
-fn thumbnail(_db: &mut Connection, filename: String) -> Vec<u8> {
+fn thumbnail(_db: &mut Connection, filename: String, height: u32) -> Vec<u8> {
     let file_bytes = std::fs::read(filename).unwrap();
-    image_thumb(&file_bytes).unwrap()
+    image_thumb(&file_bytes, height).unwrap()
 }
