@@ -2,8 +2,19 @@ use std::io::Cursor;
 
 use image::{GenericImageView, ImageError, ImageReader};
 
-pub fn image_thumb(filename: String) -> Result<Vec<u8>, ImageError> {
-    let img = ImageReader::open(filename)?.decode()?;
+pub fn image_dimensions(bytes: &Vec<u8>) -> (u32, u32) {
+    let img = ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()
+        .unwrap()
+        .decode()
+        .unwrap();
+    img.dimensions()
+}
+
+pub fn image_thumb(bytes: &Vec<u8>) -> Result<Vec<u8>, ImageError> {
+    let img = ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()?
+        .decode()?;
     let dim = img.dimensions();
     let thumbnail = img.resize(
         dim.0 / 10,

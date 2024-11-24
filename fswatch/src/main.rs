@@ -2,7 +2,8 @@ use fileserve::db;
 use fileserve::models::Image;
 use highway::{HighwayHash, PortableHash};
 use notify::{Event, RecursiveMode, Result, Watcher};
-use std::path::Path;
+use shared::image::image_dimensions;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
 fn main() -> Result<()> {
@@ -33,23 +34,33 @@ fn main() -> Result<()> {
 }
 
 fn sync(path: std::path::PathBuf) {
-    let mut file = std::fs::File::open(&path).unwrap();
-    let mut hasher = PortableHash::default();
-    let bytes_copied = std::io::copy(&mut file, &mut hasher).unwrap();
-    let hash = hasher.finalize64();
+    let file_bytes = std::fs::read(&path).unwrap();
+    let hash = PortableHash::default().hash64(&file_bytes);
     let mut db = db::init();
     if let Some(_image) = fileserve::db::image_exists(&mut db, hash) {
         println!(
             "{:?} (len {}) dupe! hash exists {}",
-            path, bytes_copied, hash
+            path,
+            file_bytes.len(),
+            hash
         );
     } else {
+        println!("{:?} analyzing", path);
+        let image = image_analysis(&path, &file_bytes, hash);
         println!("{:?} inserting {} hash", path, hash);
-        let filename = String::from_utf8(Vec::from(
-            path.as_path().file_name().unwrap().as_encoded_bytes(),
-        ))
-        .unwrap();
-        let image = Image { filename, hash };
         fileserve::db::image_insert(&mut db, &image);
+    }
+}
+
+fn image_analysis(path: &PathBuf, bytes: &Vec<u8>, hash: u64) -> Image {
+    let filename = String::from_utf8(Vec::from(
+        path.as_path().file_name().unwrap().as_encoded_bytes(),
+    ))
+    .unwrap();
+    let dim = image_dimensions(&bytes);
+    Image {
+        filename,
+        hash,
+        dim,
     }
 }

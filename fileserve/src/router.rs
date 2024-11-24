@@ -1,5 +1,6 @@
 use std::io::Cursor;
 
+use shared::image::image_thumb;
 use sqlite::Connection;
 use tiny_http::{Header, Request, Response};
 
@@ -44,5 +45,6 @@ pub fn route_request(mut db: &mut Connection, request: &mut Request) -> Response
 }
 
 fn thumbnail(_db: &mut Connection, filename: String) -> Vec<u8> {
-    shared::image::image_thumb(filename).unwrap()
+    let file_bytes = std::fs::read(filename).unwrap();
+    image_thumb(&file_bytes).unwrap()
 }

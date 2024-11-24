@@ -10,7 +10,9 @@ pub fn init() -> Connection {
         .execute(
             "CREATE TABLE IF NOT EXISTS images (
               hash INTEGER PRIMARY KEY,
-              filename VARCHAR(255)
+              filename VARCHAR(255),
+              dim_x INTEGER,
+              dim_y INTEGER
             )",
         )
         .unwrap();
@@ -39,10 +41,12 @@ pub fn image_exists(c: &mut Connection, hash: u64) -> Option<Image> {
 
 pub fn image_insert(c: &mut Connection, image: &Image) {
     let mut stmt = c
-        .prepare("INSERT INTO images (hash, filename) VALUES (?, ?)")
+        .prepare("INSERT INTO images (hash, filename, dim_x, dim_y) VALUES (?, ?, ?, ?)")
         .unwrap();
     stmt.bind((1, image.hash as i64)).unwrap();
     stmt.bind((2, image.filename.as_str())).unwrap();
+    stmt.bind((3, image.dim.0 as i64)).unwrap();
+    stmt.bind((4, image.dim.1 as i64)).unwrap();
     loop {
         match stmt.next() {
             Ok(row) => {
