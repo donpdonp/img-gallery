@@ -9,3 +9,5 @@ sqlite = "0.36.1"
 fileserve = {path = "../fileserve"}
 shared = {path = "../shared"}
 highway = "1.2.0"
+kamadak-exif = "0.6.1"
+time = { version = "0.3.36", features = ["parsing"] }

@@ -28,6 +28,7 @@
 </div>
 
 <div id="images">
+  <div class="imgdaterow">Dec 12</div>
   {#each images as image}
     <div class="image">
       <img
@@ -46,5 +47,9 @@
   #images {
     display: flex;
     flex-wrap: wrap;
+  }
+
+  .imgdaterow {
+    font-weight: bold;
   }
 </style>

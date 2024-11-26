@@ -4,6 +4,7 @@ pub struct Image {
     #[serde(serialize_with = "shared::hash::u64_to_hash")]
     pub hash: u64,
     pub dim: (u32, u32),
+    pub datetime: u64,
 }
 
 impl Image {
@@ -16,6 +17,7 @@ impl Image {
             hash: statement.read::<i64, _>("hash").unwrap() as u64,
             filename: statement.read::<String, _>("filename").unwrap(),
             dim,
+            datetime: statement.read::<i64, _>("datetime").unwrap() as u64,
         }
     }
 }
