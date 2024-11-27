@@ -7,7 +7,10 @@
 
   onMount(async () => {
     loading = true;
-    let request = JSON.stringify({ start_timestamp: 0 });
+    let request = JSON.stringify({
+      start_timestamp: 0,
+      stop_timestamp: 2731908897,
+    });
     let images_resp = await fetch(PUBLIC_IMG_API_URL, {
       method: "post",
       body: request,

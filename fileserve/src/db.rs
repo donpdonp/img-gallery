@@ -20,18 +20,22 @@ pub fn init() -> Connection {
     connection
 }
 
-pub fn images_since(db: &mut Connection, _start_timestamp: u64) -> Vec<Image> {
+pub fn images_since(db: &mut Connection, start_timestamp: u64, stop_timestamp: u64) -> Vec<Image> {
     let mut images: Vec<Image> = Vec::new();
-    let mut statement = db.prepare("select * from images").unwrap();
-    while let Ok(State::Row) = statement.next() {
-        let img: Image = Image::from_statement(&statement);
+    let mut stmt = db
+        .prepare("select * from images where datetime >= ? and datetime < ?")
+        .unwrap();
+    stmt.bind((1, start_timestamp as i64)).unwrap();
+    stmt.bind((2, stop_timestamp as i64)).unwrap();
+    while let Ok(State::Row) = stmt.next() {
+        let img: Image = Image::from_statement(&stmt);
         images.push(img)
     }
     images
 }
 
-pub fn image_exists(c: &mut Connection, hash: u64) -> Option<Image> {
-    let mut stmt = c.prepare("SELECT * FROM images WHERE hash = ?").unwrap();
+pub fn image_exists(db: &mut Connection, hash: u64) -> Option<Image> {
+    let mut stmt = db.prepare("SELECT * FROM images WHERE hash = ?").unwrap();
     stmt.bind((1, hash as i64)).unwrap();
     if let Ok(State::Row) = stmt.next() {
         Some(Image::from_statement(&stmt))

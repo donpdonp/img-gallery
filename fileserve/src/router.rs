@@ -10,6 +10,7 @@ use crate::{db, http::parse_request, models::Image};
 #[derive(serde::Deserialize)]
 pub struct Req {
     start_timestamp: u64,
+    stop_timestamp: u64,
 }
 
 #[derive(serde::Serialize)]
@@ -23,7 +24,7 @@ pub fn route_request(mut db: &mut Connection, request: &mut Request) -> Response
     if let Some(json) = json_opt {
         println!("body: {}", json);
         let req: Req = serde_json::from_str(&json).unwrap();
-        let images = db::images_since(db, req.start_timestamp);
+        let images = db::images_since(db, req.start_timestamp, req.stop_timestamp);
         let req_resp = ImageListResp { images };
         body.push_str(&serde_json::to_string(&req_resp).unwrap());
         let content_type = Header::from_bytes("Content-Type", "application/json").unwrap();
