@@ -1,4 +1,4 @@
-use exif::{Exif, In, Tag};
+use exif::{Exif, In, Tag, Value};
 use fileserve::db;
 use fileserve::models::Image;
 use highway::{HighwayHash, PortableHash};
@@ -75,14 +75,25 @@ fn image_analysis(path: &PathBuf, bytes: &Vec<u8>, hash: u64) -> Image {
 }
 
 fn exif_latlng_extract(exif: &Exif) -> (i32, i32) {
-    for f in exif.fields() {
-        println!("{:?} {:?}", f.tag.to_string(), f.value);
-        match f.tag {
-            exif::Tag::GPSLatitude => {}
-            exif::Tag::GPSLongitude => {}
-            _ => (),
-        }
-    }
+    // "GPSLatitudeRef" Ascii(["N"])
+    let gps_lat_ref_field = exif.get_field(Tag::GPSLatitudeRef, In::PRIMARY).unwrap();
+    // "GPSLatitude" Rational([Rational(13/1), Rational(45/1), Rational(461425/10000)])
+    let gps_lat_field = exif.get_field(Tag::GPSLatitude, In::PRIMARY).unwrap();
+    let lat = if let exif::Value::Rational(gps_lat) = &gps_lat_field.value {
+        gps_lat[0].to_f32()
+    } else {
+        Option::None.unwrap()
+    };
+    // "GPSLongitudeRef" Ascii(["E"])
+    let gps_lon_ref_field = exif.get_field(Tag::GPSLongitudeRef, In::PRIMARY).unwrap();
+    // "GPSLongitude" Rational([Rational(100/1), Rational(33/1), Rational(523608/10000)])
+    let gps_lon_field = exif.get_field(Tag::GPSLongitude, In::PRIMARY).unwrap();
+    println!(
+        "{:?} {:?} {:?}",
+        gps_lat_field.value,
+        gps_lat_field.display_value().to_string(),
+        lat
+    );
     (0, 0)
 }
 
@@ -105,7 +116,7 @@ fn exif_date_extract(exif: &Exif) -> OffsetDateTime {
         photo_datetime_field.value.display_as(Tag::DateTime),
         photo_timezone_wtf,
     );
-    println!("fulldate {}", fulldate);
+    // "2024-11-18 12:48:17 +07:00"
     let format = format_description::parse(
         "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory]:[offset_minute]" ).unwrap();
     OffsetDateTime::parse(&fulldate, &format).unwrap()
