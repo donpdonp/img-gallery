@@ -1,3 +1,4 @@
+use exif::{Exif, In, Tag};
 use fileserve::db;
 use fileserve::models::Image;
 use highway::{HighwayHash, PortableHash};
@@ -60,7 +61,11 @@ fn image_analysis(path: &PathBuf, bytes: &Vec<u8>, hash: u64) -> Image {
     ))
     .unwrap();
     let dim = image_dimensions(&bytes);
-    let datetime = exif_date_extract(bytes).unix_timestamp() as u64;
+    let exif = exif::Reader::new()
+        .read_from_container(&mut Cursor::new(bytes))
+        .unwrap();
+    let datetime = exif_date_extract(&exif).unix_timestamp() as u64;
+    let latlng = exif_latlng_extract(&exif);
     Image {
         filename,
         hash,
@@ -69,35 +74,38 @@ fn image_analysis(path: &PathBuf, bytes: &Vec<u8>, hash: u64) -> Image {
     }
 }
 
-fn exif_date_extract(bytes: &Vec<u8>) -> OffsetDateTime {
-    let exifreader = exif::Reader::new();
-    let exif = exifreader
-        .read_from_container(&mut Cursor::new(bytes))
-        .unwrap();
-    let mut photo_datetime: Option<String> = None;
-    let mut photo_timezone: Option<String> = None;
+fn exif_latlng_extract(exif: &Exif) -> (i32, i32) {
     for f in exif.fields() {
+        println!("{:?} {:?}", f.tag.to_string(), f.value);
         match f.tag {
-            exif::Tag::DateTime => {
-                // Ascii(["2024:11:18 12:48:17"])
-                photo_datetime = Some(f.display_value().to_string());
-            }
-            exif::Tag::OffsetTime => {
-                // Ascii(["+07:00"])
-                photo_timezone = Some(
-                    f.display_value()
-                        .to_string()
-                        .strip_prefix('"')
-                        .unwrap()
-                        .strip_suffix('"')
-                        .unwrap()
-                        .to_string(),
-                );
-            }
+            exif::Tag::GPSLatitude => {}
+            exif::Tag::GPSLongitude => {}
             _ => (),
         }
     }
-    let fulldate = format!("{} {}", photo_datetime.unwrap(), photo_timezone.unwrap());
+    (0, 0)
+}
+
+fn exif_date_extract(exif: &Exif) -> OffsetDateTime {
+    // DateTimeOriginal" Ascii(["2024:11:18 12:48:17"])
+    let photo_datetime_field = exif.get_field(Tag::DateTime, In::PRIMARY).unwrap();
+    // "OffsetTime" Ascii(["+07:00"])
+    let photo_timezone_field = exif.get_field(Tag::OffsetTime, In::PRIMARY).unwrap();
+    let photo_timezone_str = photo_timezone_field
+        .value
+        .display_as(Tag::OffsetTime)
+        .to_string();
+    let photo_timezone_wtf = photo_timezone_str
+        .strip_prefix('"') // why
+        .unwrap()
+        .strip_suffix('"')
+        .unwrap();
+    let fulldate = format!(
+        "{} {}",
+        photo_datetime_field.value.display_as(Tag::DateTime),
+        photo_timezone_wtf,
+    );
+    println!("fulldate {}", fulldate);
     let format = format_description::parse(
         "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory]:[offset_minute]" ).unwrap();
     OffsetDateTime::parse(&fulldate, &format).unwrap()
@@ -110,6 +118,9 @@ mod tests {
     #[test]
     fn it_works() {
         let bytes = vec![];
-        assert_eq!(exif_date_extract(&bytes), OffsetDateTime::now_utc());
+        let exif = exif::Reader::new()
+            .read_from_container(&mut Cursor::new(bytes))
+            .unwrap();
+        assert_eq!(exif_date_extract(&exif), OffsetDateTime::now_utc());
     }
 }
