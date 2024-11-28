@@ -1,26 +1,34 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { PUBLIC_IMG_API_URL, PUBLIC_IMG_STORE_URL } from "$env/static/public";
+  import Time from "svelte-time";
+  import * as time from "$lib/time";
 
   let images = $state([]);
   let loading = $state(false);
 
   onMount(async () => {
     loading = true;
-    let request = JSON.stringify({
-      start_timestamp: 0,
-      stop_timestamp: 2731908897,
-    });
-    let images_resp = await fetch(PUBLIC_IMG_API_URL, {
-      method: "post",
-      body: request,
-    }).then((ps) => ps.json());
-    images.push(...images_resp.images);
+    let time_groups = time.groups(2);
+    console.log(time_groups);
+    for (let group of time_groups) {
+      let request = JSON.stringify({
+        start_timestamp: group[0],
+        stop_timestamp: group[1],
+      });
+      let images_resp = await fetch(PUBLIC_IMG_API_URL, {
+        method: "post",
+        body: request,
+      }).then((ps) => ps.json());
+      images.push(...images_resp.images);
+    }
     loading = false;
   });
 </script>
 
 <h3>img-gallery</h3>
+
+<Time timestamp={new Date()} />
 
 <div>
   {#if loading}
