@@ -4,13 +4,12 @@
   import Time from "svelte-time";
   import * as time from "$lib/time";
 
-  let images = $state([]);
+  let image_groups = $state([]);
   let loading = $state(false);
 
   onMount(async () => {
     loading = true;
     let time_groups = time.groups(2);
-    console.log(time_groups);
     for (let group of time_groups) {
       let request = JSON.stringify({
         start_timestamp: group[0],
@@ -20,32 +19,33 @@
         method: "post",
         body: request,
       }).then((ps) => ps.json());
-      images.push(...images_resp.images);
+      image_groups.push([group, images_resp.images]);
     }
+    console.log($state.snapshot(image_groups));
     loading = false;
   });
 </script>
 
-<h3>img-gallery</h3>
-
-<Time timestamp={new Date()} />
-
 <div>
   {#if loading}
-    Loading
-  {:else}
-    {images.length} images
-  {/if}
+    Loading images...
+  {:else}{/if}
 </div>
 
 <div id="images">
-  <div class="imgdaterow">Dec 12</div>
-  {#each images as image}
-    <div class="image">
-      <img
-        src="{PUBLIC_IMG_STORE_URL}/{image.hash}?h=200"
-        alt={image.filename}
-      />
+  {#each image_groups as image_group}
+    <div class="imagerowdate">
+      <Time timestamp={image_group[0][0] * 1000} />
+    </div>
+    <div class="imagerow">
+      {#each image_group[1] as image}
+        <div class="image">
+          <img
+            src="{PUBLIC_IMG_STORE_URL}/{image.hash}?h=200"
+            alt={image.filename}
+          />
+        </div>
+      {/each}
     </div>
   {/each}
 </div>
@@ -55,12 +55,14 @@
     margin: 3px;
   }
 
-  #images {
+  .imagerow {
     display: flex;
     flex-wrap: wrap;
+    margin: 3px;
   }
 
-  .imgdaterow {
+  .imagerowdate {
     font-weight: bold;
+    width: 10em;
   }
 </style>
