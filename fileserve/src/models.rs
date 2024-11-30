@@ -1,4 +1,4 @@
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Image {
     pub filename: String,
     #[serde(serialize_with = "shared::hash::u64_to_hash")]

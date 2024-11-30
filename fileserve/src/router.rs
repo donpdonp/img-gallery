@@ -30,12 +30,11 @@ pub fn route_request(db: &mut Connection, request: &mut Request) -> Response<Cur
 }
 
 fn image_gallery(db: &mut Connection, req: Req) -> Response<Cursor<Vec<u8>>> {
-    let mut body = String::new();
     let images = db::images_since(db, req.start_timestamp, req.stop_timestamp);
     let req_resp = ImageListResp { images };
-    body.push_str(&serde_json::to_string(&req_resp).unwrap());
+    let json = serde_json::to_string(&req_resp).unwrap();
     let content_type = Header::from_bytes("Content-Type", "application/json").unwrap();
-    Response::from_string(body).with_header(content_type)
+    Response::from_string(json).with_header(content_type)
 }
 
 fn thumbnail(db: &mut Connection, request: &mut Request) -> Response<Cursor<Vec<u8>>> {
