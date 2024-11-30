@@ -6,7 +6,7 @@
   import * as time from "$lib/time";
 
   let image_groups = $state({ groups: [] });
-  let loading = $state(false);
+  let loading = $state(true);
   let win_height = $state(0);
   let win_width = $state(0);
 
@@ -56,10 +56,12 @@
     <div class="imagerow">
       {#each image_group[1] as image}
         <div class="image">
-          <img
-            src="{PUBLIC_IMG_STORE_URL}/{image.hash}?h=200"
-            alt={image.filename}
-          />
+          <a href="{PUBLIC_IMG_STORE_URL}/{image.hash}">
+            <img
+              src="{PUBLIC_IMG_STORE_URL}/{image.hash}?h=200"
+              alt={image.filename}
+            />
+          </a>
         </div>
       {/each}
     </div>

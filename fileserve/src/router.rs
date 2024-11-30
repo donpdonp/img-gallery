@@ -32,22 +32,17 @@ pub fn route_request(mut db: &mut Connection, request: &mut Request) -> Response
     } else {
         let url = Url::parse(&("http://localhost".to_owned() + request.url())).unwrap();
         let hash_code = url.path();
-        let w_height_str = if let Some(qp) = url.query_pairs().find(|qp| qp.0 == "h") {
-            qp.1.into_owned()
-        } else {
-            "300".to_owned()
-        };
         let hash = shared::hash::hash_to_u64(&hash_code[1..]);
         let config = shared::CONFIG.get().unwrap();
         let img_bytes = match db::image_exists(db, hash) {
             Some(image) => {
+                let new_height = url
+                    .query_pairs()
+                    .find(|qp| qp.0 == "h")
+                    .map(|qp| u32::from_str_radix(&qp.1, 10).unwrap());
                 let filename = config.photos_path.clone() + "/" + &image.filename;
                 println!("thumbnail processing {:?}", filename);
-                thumbnail(
-                    &mut db,
-                    filename,
-                    u32::from_str_radix(&w_height_str, 10).unwrap(),
-                )
+                thumbnail(&mut db, filename, new_height)
             }
             None => vec![],
         };
@@ -56,7 +51,7 @@ pub fn route_request(mut db: &mut Connection, request: &mut Request) -> Response
     }
 }
 
-fn thumbnail(_db: &mut Connection, filename: String, height: u32) -> Vec<u8> {
+fn thumbnail(_db: &mut Connection, filename: String, height: Option<u32>) -> Vec<u8> {
     let file_bytes = std::fs::read(filename).unwrap();
     image_thumb(&file_bytes, height).unwrap()
 }
