@@ -1,5 +1,7 @@
+.ignore
 target/
 Cargo.lock
 *.sqlite
 img/
 *.yaml
+photobackup-client/

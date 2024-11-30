@@ -9,5 +9,5 @@ export function groups(group_count: number): [] {
     let stop = now - ago * i;
     groups.push([start, stop]);
   }
-  return groups;
+  return { start: groups[groups.length - 1][0], stop: now, groups: groups };
 }
