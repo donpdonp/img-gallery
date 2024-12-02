@@ -14,31 +14,40 @@ pub struct Req {
 }
 
 #[derive(serde::Serialize)]
+pub struct ErrorResp {}
+
+#[derive(serde::Serialize)]
 pub struct ImageListResp {
     images: Vec<Image>,
 }
 
 pub fn route_request(db: &mut Connection, request: &mut Request) -> Response<Cursor<Vec<u8>>> {
-    if request.method() == &Method::Post {
-        println!("{:?}", request.headers());
-        let content_type_header = HeaderField::from_bytes("content-type").unwrap();
-        let content_type = request
-            .headers()
-            .iter()
-            .find(|h| h.field == content_type_header)
-            .unwrap();
-        println!(
-            "route: {} content-type {}",
-            request.method(),
-            content_type.value
-        );
-        if content_type.value == "application/json" {}
+    let content_type_header = HeaderField::from_bytes("content-type").unwrap();
+    let content_type = request
+        .headers()
+        .iter()
+        .find(|h| h.field == content_type_header)
+        .unwrap();
+    println!(
+        "route: {} {} content-type: {}",
+        request.method(),
+        request.url(),
+        content_type.value
+    );
+    if request.method() == &Method::Post {}
+    if request.url() == "/test" {
+        return Response::from_string("").with_status_code(200);
     }
-    let json_opt = parse_request(request);
-    if let Some(json) = json_opt {
-        println!("body: {}", json);
-        let req: Req = serde_json::from_str(&json).unwrap();
-        image_gallery(db, req)
+    if content_type.value == "application/json" {
+        let json_opt = parse_request(request);
+        if let Some(json) = json_opt {
+            println!("body: {}", json);
+            let req: Req = serde_json::from_str(&json).unwrap();
+            image_gallery(db, req)
+        } else {
+            let err_req = serde_json::to_string(&ErrorResp {}).unwrap();
+            Response::from_string(err_req)
+        }
     } else {
         thumbnail(db, request)
     }
