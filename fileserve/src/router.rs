@@ -2,7 +2,7 @@ use std::io::Cursor;
 
 use shared::image::image_thumb;
 use sqlite::Connection;
-use tiny_http::{Header, Request, Response};
+use tiny_http::{Header, HeaderField, Method, Request, Response};
 use url::Url;
 
 use crate::{db, http::parse_request, models::Image};
@@ -19,6 +19,21 @@ pub struct ImageListResp {
 }
 
 pub fn route_request(db: &mut Connection, request: &mut Request) -> Response<Cursor<Vec<u8>>> {
+    if request.method() == &Method::Post {
+        println!("{:?}", request.headers());
+        let content_type_header = HeaderField::from_bytes("content-type").unwrap();
+        let content_type = request
+            .headers()
+            .iter()
+            .find(|h| h.field == content_type_header)
+            .unwrap();
+        println!(
+            "route: {} content-type {}",
+            request.method(),
+            content_type.value
+        );
+        if content_type.value == "application/json" {}
+    }
     let json_opt = parse_request(request);
     if let Some(json) = json_opt {
         println!("body: {}", json);
