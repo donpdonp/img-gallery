@@ -1,4 +1,4 @@
-use exif::{Exif, In, Tag, Value};
+use exif::{Exif, In, Tag};
 use fileserve::db;
 use fileserve::models::Image;
 use highway::{HighwayHash, PortableHash};

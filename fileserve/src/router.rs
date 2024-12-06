@@ -1,8 +1,9 @@
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 
+use multipart::server::{HttpRequest, Multipart};
 use shared::image::image_thumb;
 use sqlite::Connection;
-use tiny_http::{Header, HeaderField, Method, Request, Response};
+use tiny_http::{Header, Method, Request, Response};
 use url::Url;
 
 use crate::{db, http::parse_request, models::Image};
@@ -21,35 +22,87 @@ pub struct ImageListResp {
     images: Vec<Image>,
 }
 
-pub fn route_request(db: &mut Connection, request: &mut Request) -> Response<Cursor<Vec<u8>>> {
-    let content_type_header = HeaderField::from_bytes("content-type").unwrap();
-    let content_type = request
-        .headers()
-        .iter()
-        .find(|h| h.field == content_type_header)
-        .unwrap();
-    println!(
-        "route: {} {} content-type: {}",
-        request.method(),
-        request.url(),
-        content_type.value
-    );
-    if request.method() == &Method::Post {}
-    if request.url() == "/test" {
-        return Response::from_string("").with_status_code(200);
+pub struct TinyHttpRequest<'s> {
+    request: &'s mut Request,
+}
+
+impl<'r> HttpRequest for TinyHttpRequest<'r> {
+    type Body = &'r mut dyn Read;
+
+    fn multipart_boundary(&self) -> Option<&str> {
+        const BOUNDARY: &str = "boundary=";
+
+        let content_type = self
+            .request
+            .headers()
+            .iter()
+            .find(|header| header.field.equiv("Content-Type"))
+            .unwrap()
+            .value
+            .as_str();
+        let start = content_type.find(BOUNDARY).unwrap() + BOUNDARY.len();
+        let end = content_type[start..]
+            .find(';')
+            .map_or(content_type.len(), |end| start + end);
+
+        Some(&content_type[start..end])
     }
-    if content_type.value == "application/json" {
-        let json_opt = parse_request(request);
-        if let Some(json) = json_opt {
-            println!("body: {}", json);
-            let req: Req = serde_json::from_str(&json).unwrap();
-            image_gallery(db, req)
+
+    fn body(self) -> Self::Body {
+        self.request.as_reader()
+    }
+}
+
+pub fn route_request<'r>(
+    db: &mut Connection,
+    request: &'r mut Request,
+) -> Response<Cursor<Vec<u8>>> {
+    // let content_type_header = HeaderField::from_bytes("content-type").unwrap();
+    let trequest = TinyHttpRequest { request };
+    let headers = trequest.request.headers();
+    let content_type = headers
+        .iter()
+        .find(|h| h.field.equiv("content-type"))
+        .unwrap();
+    let ctv = content_type.value.to_string();
+    let ctc = ctv.split(';').collect::<Vec<&str>>()[0];
+    println!(
+        "route: {} {} content-type: {} filter {}",
+        trequest.request.method(),
+        trequest.request.url(),
+        content_type.value,
+        ctc
+    );
+    if trequest.request.method() == &Method::Post {
+        // route: POST  content-type: multipart/form-data; boundary=4e204ab2-6e27-4f6d-a91d-6367dc6168da
+        if ctc == "multipart/form-data" {
+            println!("multiball!!");
+            match Multipart::from_request(trequest) {
+                Ok(mut multipart) => {
+                    multipart.save().with_dir("/tmp/multiwtf");
+                }
+                Err(_) => (),
+            }
+            Response::from_string("gulp")
+        } else if ctc == "application/json" {
+            let json_opt = parse_request(request);
+            if let Some(json) = json_opt {
+                println!("body: {}", json);
+                let req: Req = serde_json::from_str(&json).unwrap();
+                image_gallery(db, req)
+            } else {
+                let err_req = serde_json::to_string(&ErrorResp {}).unwrap();
+                Response::from_string(err_req)
+            }
         } else {
-            let err_req = serde_json::to_string(&ErrorResp {}).unwrap();
-            Response::from_string(err_req)
+            Response::from_string("unknown mimetype")
         }
     } else {
-        thumbnail(db, request)
+        if request.url() == "/test" {
+            return Response::from_string("").with_status_code(200);
+        } else {
+            thumbnail(db, request)
+        }
     }
 }
 
