@@ -21,8 +21,12 @@ fn main() -> Result<(), std::io::Error> {
         spawn(|| {
             let mut db = db::init();
             let resp = route_request(&mut db, &mut request);
-            let cors = Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap();
-            request.respond(resp.with_header(cors)).unwrap();
+            let cors_origin = Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap();
+            let cors_headers =
+                Header::from_bytes("Access-Control-Allow-Headers", "Content-Type").unwrap();
+            request
+                .respond(resp.with_header(cors_origin).with_header(cors_headers))
+                .unwrap();
         });
     }
     Ok(())

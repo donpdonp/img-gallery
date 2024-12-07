@@ -22,6 +22,7 @@
       });
       let images_resp = await fetch(PUBLIC_IMG_API_URL, {
         method: "post",
+        headers: { "Content-Type": "application/json" },
         body: request,
       }).then((ps) => ps.json());
       image_groups.groups.push([group, images_resp.images]);
