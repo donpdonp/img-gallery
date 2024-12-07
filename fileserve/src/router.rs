@@ -57,12 +57,6 @@ pub fn route_request<'r>(
     db: &mut Connection,
     request: &'r mut Request,
 ) -> Response<Cursor<Vec<u8>>> {
-    println!(
-        "route: {} {} {:?}",
-        request.method(),
-        request.url(),
-        request.headers()
-    );
     match request.method() {
         Method::Post => {
             // route: POST  content-type: multipart/form-data; boundary=4e204ab2-6e27-4f6d-a91d-6367dc6168da
@@ -146,6 +140,7 @@ fn save_multipart(multipart: Multipart<&mut dyn Read>) -> String {
 
 fn image_gallery(db: &mut Connection, req: Req) -> Response<Cursor<Vec<u8>>> {
     let images = db::images_since(db, req.start_timestamp, req.stop_timestamp);
+    println!("image gallery metadata for {}", images.len());
     let req_resp = ImageListResp { images };
     let json = serde_json::to_string(&req_resp).unwrap();
     let content_type = Header::from_bytes("Content-Type", "application/json").unwrap();
