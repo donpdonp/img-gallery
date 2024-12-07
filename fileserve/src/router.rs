@@ -86,7 +86,13 @@ pub fn route_request<'r>(
                         match entry_result {
                             multipart::server::ReadEntryResult::Entry(mut entry) => {
                                 println!("entry {:?}", entry.headers);
-                                entry.data.save().with_dir("/tmp/multiwtf");
+                                match entry.data.save().with_dir("/tmp/multiwtf") {
+                                    multipart::server::SaveResult::Full(fileattr) => {
+                                        println!("fullsave: {:?}", fileattr)
+                                    }
+                                    multipart::server::SaveResult::Partial(_, _) => todo!(),
+                                    multipart::server::SaveResult::Error(_) => todo!(),
+                                }
                                 entry_result = entry.next_entry();
                             }
                             multipart::server::ReadEntryResult::End(_) => break,
