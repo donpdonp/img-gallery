@@ -22,9 +22,12 @@ pub fn init() -> Connection {
 
 pub fn images_since(db: &mut Connection, start_timestamp: u64, stop_timestamp: u64) -> Vec<Image> {
     let mut images: Vec<Image> = Vec::new();
-    let mut stmt = db
-        .prepare("select * from images where datetime >= ? and datetime < ?")
-        .unwrap();
+    let sql = "select * from images where datetime >= ? and datetime < ?";
+    println!(
+        "images_since: {} {} {}",
+        sql, start_timestamp, stop_timestamp
+    );
+    let mut stmt = db.prepare(sql).unwrap();
     stmt.bind((1, start_timestamp as i64)).unwrap();
     stmt.bind((2, stop_timestamp as i64)).unwrap();
     while let Ok(State::Row) = stmt.next() {

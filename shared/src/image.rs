@@ -25,7 +25,7 @@ pub fn image_thumb(bytes: &Vec<u8>, height_opt: Option<u32>) -> Result<Vec<u8>, 
         (dim.0 as u32, dim.1 as u32)
     };
     println!(
-        "(requested height {:?}) resize {},{} -> {},{}",
+        "requested height {:?} resize {},{} -> {},{}",
         height_opt, dim.0, dim.1, computed_width, computed_height
     );
     let thumbnail = img.resize(
