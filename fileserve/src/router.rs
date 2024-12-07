@@ -57,6 +57,7 @@ pub fn route_request<'r>(
     db: &mut Connection,
     request: &'r mut Request,
 ) -> Response<Cursor<Vec<u8>>> {
+    let config = shared::CONFIG.get().unwrap();
     // let content_type_header = HeaderField::from_bytes("content-type").unwrap();
     let trequest = TinyHttpRequest { request };
     let headers = trequest.request.headers();
@@ -76,8 +77,6 @@ pub fn route_request<'r>(
     if trequest.request.method() == &Method::Post {
         // route: POST  content-type: multipart/form-data; boundary=4e204ab2-6e27-4f6d-a91d-6367dc6168da
         if ctc == "multipart/form-data" {
-            println!("multiball!!");
-            //Multipart::<Read + Sized>::with_body();
             match Multipart::from_request(trequest) {
                 Ok(multipart) => {
                     // loop {
@@ -86,12 +85,25 @@ pub fn route_request<'r>(
                         match entry_result {
                             multipart::server::ReadEntryResult::Entry(mut entry) => {
                                 println!("entry {:?}", entry.headers);
-                                match entry.data.save().with_dir("/tmp/multiwtf") {
-                                    multipart::server::SaveResult::Full(fileattr) => {
-                                        println!("fullsave: {:?}", fileattr)
+                                if *entry.headers.name == *"upfile" {
+                                    match entry.data.save().with_dir(config.photos_path.clone()) {
+                                        multipart::server::SaveResult::Full(save_result) => {
+                                            match save_result {
+                                                multipart::server::save::SavedData::Text(_) => {
+                                                    todo!()
+                                                }
+                                                multipart::server::save::SavedData::Bytes(_) => {
+                                                    todo!()
+                                                }
+                                                multipart::server::save::SavedData::File(
+                                                    filename,
+                                                    _,
+                                                ) => println!("fullsave: {:?}", filename),
+                                            }
+                                        }
+                                        multipart::server::SaveResult::Partial(_, _) => todo!(),
+                                        multipart::server::SaveResult::Error(_) => todo!(),
                                     }
-                                    multipart::server::SaveResult::Partial(_, _) => todo!(),
-                                    multipart::server::SaveResult::Error(_) => todo!(),
                                 }
                                 entry_result = entry.next_entry();
                             }
