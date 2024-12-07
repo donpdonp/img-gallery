@@ -1,6 +1,6 @@
 use std::io::{Cursor, Read};
 
-use multipart::server::{HttpRequest, Multipart};
+use multipart::server::{HttpRequest, Multipart, ReadEntry};
 use shared::image::image_thumb;
 use sqlite::Connection;
 use tiny_http::{Header, Method, Request, Response};
@@ -77,9 +77,22 @@ pub fn route_request<'r>(
         // route: POST  content-type: multipart/form-data; boundary=4e204ab2-6e27-4f6d-a91d-6367dc6168da
         if ctc == "multipart/form-data" {
             println!("multiball!!");
+            //Multipart::<Read + Sized>::with_body();
             match Multipart::from_request(trequest) {
-                Ok(mut multipart) => {
-                    multipart.save().with_dir("/tmp/multiwtf");
+                Ok(multipart) => {
+                    // loop {
+                    let mut entry_result = multipart.read_entry();
+                    loop {
+                        match entry_result {
+                            multipart::server::ReadEntryResult::Entry(mut entry) => {
+                                println!("entry {:?}", entry.headers);
+                                entry.data.save().with_dir("/tmp/multiwtf");
+                                entry_result = entry.next_entry();
+                            }
+                            multipart::server::ReadEntryResult::End(_) => break,
+                            multipart::server::ReadEntryResult::Error(_, _) => break,
+                        }
+                    }
                 }
                 Err(_) => (),
             }
