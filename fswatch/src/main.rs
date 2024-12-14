@@ -61,16 +61,21 @@ fn image_analysis(path: &PathBuf, bytes: &Vec<u8>, hash: u64) -> Image {
     ))
     .unwrap();
     let dim = image_dimensions(&bytes);
-    let exif = exif::Reader::new()
-        .read_from_container(&mut Cursor::new(bytes))
-        .unwrap();
-    let datetime = exif_date_extract(&exif).unix_timestamp() as u64;
-    let latlng = exif_latlng_extract(&exif);
+    let datetime = image_datetime(&bytes);
+    //let latlng = exif_latlng_extract(&exif);
     Image {
         filename,
         hash,
         dim,
         datetime,
+    }
+}
+
+fn image_datetime(bytes: &Vec<u8>) -> u64 {
+    let reader = exif::Reader::new();
+    match reader.read_from_container(&mut Cursor::new(bytes)) {
+        Ok(exif) => exif_date_extract(&exif).unix_timestamp() as u64,
+        Err(_) => chrono::Utc::now().timestamp_millis() as u64,
     }
 }
 
