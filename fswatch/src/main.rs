@@ -42,7 +42,7 @@ fn sync(path: std::path::PathBuf) {
     let mut db = db::init();
     if let Some(_image) = fileserve::db::image_exists(&mut db, hash) {
         println!(
-            "{:?} (len {}) dupe! hash exists {}",
+            "{:?} (len {}) skipping. hash exists {}",
             path,
             file_bytes.len(),
             hash
@@ -50,7 +50,12 @@ fn sync(path: std::path::PathBuf) {
     } else {
         println!("{:?} analyzing", path);
         let image = image_analysis(&path, &file_bytes, hash);
-        println!("{:?} inserting {} hash", path, hash);
+        println!(
+            "{:?} inserting {} hash {}",
+            path,
+            hash,
+            chrono::Utc::from(image.datetime)
+        );
         fileserve::db::image_insert(&mut db, &image);
     }
 }

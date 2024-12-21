@@ -63,6 +63,9 @@
               alt={image.filename}
             />
           </a>
+          <div class="imagedate">
+            <Time timestamp={image.datetime * 1000} />
+          </div>
         </div>
       {/each}
     </div>
@@ -82,5 +85,9 @@
 
   .imagerowdate {
     font-weight: bold;
+  }
+
+  .imagedate {
+    text-align: center;
   }
 </style>
